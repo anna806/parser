@@ -22,24 +22,196 @@ void loadFile(string path, char*& data) {
     }
 }
 
-void processData(char* data) {
-    uint64_t length;
-    switch (data[0]) {
-        case 0x1:
-            length = static_cast<uint64_t>(static_cast<unsigned char>(data[1]) |
-                    static_cast<unsigned char>(data[2]) << 8 |
-                    static_cast<unsigned char>(data[3]) << 16 |
-                    static_cast<unsigned char>(data[4]) <<  24 |
-                    static_cast<unsigned char>(data[5]) <<  32 |
-                    static_cast<unsigned char>(data[6]) <<  40 |
-                    static_cast<unsigned char>(data[7]) <<  48 |
-                    static_cast<unsigned char>(data[8]) <<  56);
-            cout << length;
-            break;
-        default: 
-            cout << "Not found header!";
-            exit(1);
+uint64_t determineLength(char* data) {
+    uint64_t length = 0x0;
+    if (data[0] == 0x1) {
+        for (int i = 1; i < 9; i++) {
+            length |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << (i - 1) * 8);
+        }
+        /*length = static_cast<uint64_t>(static_cast<unsigned char>(data[1]) |
+            static_cast<unsigned char>(data[2]) << 8 |
+            static_cast<unsigned char>(data[3]) << 16 |
+            static_cast<unsigned char>(data[4]) << 24 |
+            static_cast<unsigned char>(data[5]) << 32 |
+            static_cast<unsigned char>(data[6]) << 40 |
+            static_cast<unsigned char>(data[7]) << 48 |
+            static_cast<unsigned char>(data[8]) << 56);*/
+        cout << "Size of the header: ";
+        cout << length;
+        cout << "\n";
     }
+    else {
+        cout << "Header not found!\n";
+        exit(1);
+    }
+    return length;
+
+}
+
+void processData(char* data, uint64_t length) {
+    if (length == 0) {
+        cout << "Given 0 length!\n";
+        return;
+    }
+    switch (data[0]) {
+    case 0x1: {
+
+        for (int i = 9; i < 13; i++) {
+            cout << data[i];
+        }
+        cout << "\n";
+        uint64_t headerSize = 0x0;
+        int index = 0;
+        for (int i = 13; i < 21; i++) {
+            headerSize |= static_cast<int>(static_cast<unsigned char>(data[i]) << index * 8);
+            index++;
+        }
+        cout << headerSize;
+        cout << "\n";
+        if (length != headerSize) {
+            return;
+        }
+        uint64_t num_anim = 0x0;
+        index = 0;
+        for (int i = 21; i < 29; i++) {
+            num_anim |= static_cast<int>(static_cast<unsigned char>(data[i]) << index * 8);
+            index++;
+        }
+        cout << num_anim;
+        break;
+    }
+    case 0x2: {
+
+        break;
+    }
+    case 0x3: {
+
+        break;
+    }
+    default: {
+        cout << "Not correct block type!";
+        exit(1);
+    }
+    }
+}
+
+uint64_t processHeader(char* data, uint64_t length) {
+    if (data[0] != 0x1) {
+        return 0x0;
+    }
+    cout << "Magic ";
+    for (int i = 9; i < 13; i++) {
+        cout << data[i];
+    }
+    cout << "\n";
+    uint64_t headerSize = 0x0;
+    int index = 0;
+    for (int i = 13; i < 21; i++) {
+        headerSize |= static_cast<int>(static_cast<unsigned char>(data[i]) << index * 8);
+        index++;
+    }
+    cout << "Size of the header: ";
+    cout << headerSize;
+    cout << "\n";
+    if (length != headerSize) {
+        return 0x0;
+    }
+    uint64_t num_anim = 0x0;
+    index = 0;
+    for (int i = 21; i < 29; i++) {
+        num_anim |= static_cast<int>(static_cast<unsigned char>(data[i]) << index * 8);
+        index++;
+    }
+    cout << "Number of animations: ";
+    cout << num_anim;
+    cout << "\n";
+    return num_anim;
+}
+
+uint64_t processCreator(char* data, uint64_t index) {
+    if (data[index] != 0x2) {
+        cout << "Creator not found!";
+        return 0x0;
+    }
+    uint64_t length = 0x0;
+    int num = 0;
+    for (uint64_t i = index + 1; i < index + 9; i++) {
+        length |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
+        num++;
+    }
+    cout << "Creator length: ";
+    cout << length;
+    cout << "\n";
+    index += 9;
+    uint64_t year = static_cast<uint64_t>(static_cast<unsigned char>(data[index]) |
+        static_cast<unsigned char>(data[index + 1]) << 8);
+    uint64_t month = static_cast<uint64_t>(static_cast<unsigned char>(data[index + 2]));
+    uint64_t day = static_cast<uint64_t>(static_cast<unsigned char>(data[index + 3]));
+    uint64_t hour = static_cast<uint64_t>(static_cast<unsigned char>(data[index + 4]));
+    uint64_t minute = static_cast<uint64_t>(static_cast<unsigned char>(data[index + 5]));
+    cout << year;
+    cout << "-";
+    cout << month;
+    cout << "-";
+    cout << day;
+    cout << " ";
+    cout << hour;
+    cout << ":";
+    cout << minute;
+    cout << "\n";
+    index += 6;
+    uint64_t creatorLength = 0x0;
+    num = 0;
+    for (uint64_t i = index; i < index + 8; i++) {
+        creatorLength |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
+        num++;
+    }
+    if (creatorLength == 0x0) {
+        cout << "There is no creator name given.\n";
+    }
+    else {
+        cout << "Length of creator string: ";
+        cout << creatorLength;
+        cout << "\n";
+        index += 8;
+        char* creator = new char[creatorLength + 1];
+        for (uint64_t i = 0; i < creatorLength; i++) {
+            creator[i] = data[index + i];
+        }
+        creator[creatorLength] = '\0';
+        cout << "Name of creator: ";
+        cout << creator;
+        cout << "\n";
+    }
+    return length + uint64_t(9);
+}
+
+uint64_t processCIFF(char* data, uint64_t index) {
+    if (data[index] != 0x3) {
+        cout << "Animation not found!";
+        return 0x0;;
+    }
+    uint64_t length = 0x0;
+    int num = 0;
+    for (uint64_t i = index + 1; i < index + 9; i++) {
+        length |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
+        num++;
+    }
+    cout << "Animation length: ";
+    cout << length;
+    cout << "\n";
+    index += 9;
+    uint64_t anim_dur = 0;
+    num = 0;
+    for (uint64_t i = index; i < index + 8; i++) {
+        anim_dur |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
+        num++;
+    }
+    cout << "Duration of the animation: ";
+    cout << anim_dur;
+    cout << " ms\n";
+    index += anim_dur;
+    return length + uint64_t(9);
 }
 
 int main(int argc, char* argv[])
@@ -49,8 +221,17 @@ int main(int argc, char* argv[])
     char* data;
     loadFile(path, data);
     if (data != NULL) {
-        processData(data);
+        uint64_t length = determineLength(data);
+        uint64_t num_anim = processHeader(data, length);
+        uint64_t index = length + 9;
+        uint64_t size = processCreator(data, index);
+        index += size;
+        for (int i = 0; i < num_anim; i++) {
+            size = processCIFF(data, index);
+            index += size;
+        }
     }
+    delete[] data;
     return 0;
 }
 
