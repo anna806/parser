@@ -4,6 +4,9 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <encode.h>
+#include <decode.h>
+#include <types.h>
 using namespace std;
 
 void loadFile(string path, char*& data) {
@@ -186,6 +189,81 @@ uint64_t processCreator(char* data, uint64_t index) {
     return length + uint64_t(9);
 }
 
+void processCIFFData(char* data, uint64_t index) {
+    cout << "Magic ";
+    for (uint64_t i = index; i < index + 4; i++) {
+        cout << data[i];
+    }
+    cout << "\n";
+    index += 4;
+    uint64_t headerSize = 0x0;
+    int num = 0;
+    for (uint64_t i = index; i < index + 8; i++) {
+        headerSize |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
+        num++;
+    }
+    cout << "Header size : " << headerSize << endl;
+    index += 8;
+    uint64_t contentSize = 0x0;
+    num = 0;
+    for (uint64_t i = index; i < index + 8; i++) {
+        contentSize |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
+        num++;
+    }
+    cout << "Content size : " << contentSize << endl;
+    index += 8;
+    uint64_t width = 0x0;
+    num = 0;
+    for (uint64_t i = index; i < index + 8; i++) {
+        width |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
+        num++;
+    }
+    cout << "Width: " << width << endl;
+    index += 8;
+    uint64_t height = 0x0;
+    num = 0;
+    for (uint64_t i = index; i < index + 8; i++) {
+        height |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
+        num++;
+    }
+    cout << "Height: " << height << endl;
+    index += 8;
+    if (contentSize != width * height * 3) {
+        cout << "Content condition not met!" << endl;
+        return;
+    }
+    num = 0;
+    for (uint64_t i = index; data[i] != '\n'; i++) {
+        cout << data[i];
+        num++;
+    }
+    cout << "\n";
+    index += num + 1;
+    uint64_t remaining = headerSize - 36 - num - 1;
+    uint64_t max = index + remaining;
+    cout << "Tags:" << endl;
+    while (index < max) {
+        num = 0;
+        cout << "\t";
+        for (uint64_t i = index; data[i] != '\0'; i++) {
+            cout << data[i];
+            num++;
+        }
+        cout << endl;
+        index += num + 1;
+    }
+    uint8_t* pixels = new uint8_t[contentSize];
+    uint64_t pixelEnd = index + contentSize;
+    num = 0;
+    for (uint64_t i = index; i < pixelEnd; i++) {
+        pixels[num] = static_cast<uint8_t>(static_cast<unsigned char>(data[i]));
+        num++;
+    }
+    uint8_t** output = new uint8_t*;
+    size_t webp = WebPEncodeRGB(pixels, width, height, width * 3, 100, output);
+    WebPFree(*output);
+}
+
 uint64_t processCIFF(char* data, uint64_t index) {
     if (data[index] != 0x3) {
         cout << "Animation not found!";
@@ -201,7 +279,7 @@ uint64_t processCIFF(char* data, uint64_t index) {
     cout << length;
     cout << "\n";
     index += 9;
-    uint64_t anim_dur = 0;
+    uint64_t anim_dur = 0x0;
     num = 0;
     for (uint64_t i = index; i < index + 8; i++) {
         anim_dur |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
@@ -210,7 +288,8 @@ uint64_t processCIFF(char* data, uint64_t index) {
     cout << "Duration of the animation: ";
     cout << anim_dur;
     cout << " ms\n";
-    index += anim_dur;
+    index += 8;
+    processCIFFData(data, index);
     return length + uint64_t(9);
 }
 
