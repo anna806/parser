@@ -57,7 +57,7 @@ void processHeader(char* data, uint64_t length) {
     cout << "\n";
     uint64_t headerSize = 0x0;
     headerSize = getInteger(data, 13);
-    int index = 0;
+    //int index = 0;
     /*for (int i = 13; i < 21; i++) {
         headerSize |= static_cast<int>(static_cast<unsigned char>(data[i]) << index * 8);
         index++;
@@ -69,7 +69,7 @@ void processHeader(char* data, uint64_t length) {
         return;
     }
     uint64_t num_anim = 0x0;
-    index = 0;
+    //index = 0;
     num_anim = getInteger(data, 21);
     /*for (int i = 21; i < 29; i++) {
         num_anim |= static_cast<int>(static_cast<unsigned char>(data[i]) << index * 8);
@@ -142,7 +142,7 @@ uint64_t processCreator(char* data, uint64_t index) {
     return length + uint64_t(9);
 }
 
-void processCIFFData(char* data, uint64_t index, string fileName) {
+int processCIFFData(char* data, uint64_t index, string fileName) {
     cout << "Magic ";
     for (uint64_t i = index; i < index + 4; i++) {
         cout << data[i];
@@ -240,13 +240,18 @@ void processCIFFData(char* data, uint64_t index, string fileName) {
         }
         image.close();
     }
+    else {
+        WebPFree(output);
+        return 1;
+    }
     WebPFree(output);
+    return 0;
 }
 
-uint64_t processCIFF(char* data, uint64_t index, string fileName) {
+int processCIFF(char* data, uint64_t index, string fileName) {
     if (data[index] != 0x3) {
         cout << "Animation not found!";
-        return 0x0;;
+        return 1;
     }
     index++;
     uint64_t length = 0x0;
@@ -271,8 +276,8 @@ uint64_t processCIFF(char* data, uint64_t index, string fileName) {
     cout << anim_dur;
     cout << " ms\n";
     index += 8;
-    processCIFFData(data, index, fileName);
-    return length + uint64_t(9);
+    int result = processCIFFData(data, index, fileName);
+    return result;
 }
 
 string filename(string name) {
@@ -283,15 +288,42 @@ string filename(string name) {
 
 int main(int argc, char* argv[])
 {
+    if (argc != 2) {
+        return 1;
+    }
     bool caff;
-    if (argv[0] == "-caff") {
+    bool same = false;
+    const char* first = "-caff";
+    const char* second = "-ciff";
+    for (int i = 0; argv[0][i] != '\0'; i++) {
+        if (argv[0][i] == first[i]) {
+            same = true;
+        }
+        else {
+            same = false;
+            break;
+        }
+    }
+    if (same) {
         caff = true;
     }
-    else if (argv[0] == "-ciff") {
-        caff = false;
-    }
     else {
-        return 1;
+        same = false;
+        for (int i = 0; argv[1][i] != '\0'; i++) {
+            if (argv[1][i] == second[i]) {
+                same = true;
+            }
+            else {
+                same = false;
+                break;
+            }
+        }
+        if (same) {
+            caff = false;
+        }
+        else {
+            return 1;
+        }
     }
     if (argv[1] == NULL) {
         return 1;
@@ -300,6 +332,7 @@ int main(int argc, char* argv[])
     string fileName = filename(path);
     char* data;
     loadFile(path, data);
+    int result = 1;
     if (data != NULL) {
         if (caff) {
             uint64_t length = determineLength(data);
@@ -308,13 +341,12 @@ int main(int argc, char* argv[])
             uint64_t size = processCreator(data, index);
             index += size;
             size = processCIFF(data, index, fileName);
-            index += size;
 
         }
         else {
-            processCIFFData(data, 0, fileName);
+            int result = processCIFFData(data, 0, fileName);
         }
     }
     delete[] data;
-    return 0;
+    return result;
 }
