@@ -46,27 +46,29 @@ uint64_t determineLength(char* data) {
 
 }
 
-void processHeader(char* data, uint64_t length) {
+int processHeader(char* data, uint64_t length) {
     if (data[0] != 0x1) {
-        return;
+        return 1;
     }
-    cout << "Magic ";
+    const char* magic = "CAFF";
+    int index = 0;
+    bool same = false;
     for (int i = 9; i < 13; i++) {
-        cout << data[i];
+        if (data[i] == magic[index]) {
+            same = true;
+        }
+        else {
+            same = false;
+            return 1;
+        }
     }
-    cout << "\n";
     uint64_t headerSize = 0x0;
     headerSize = getInteger(data, 13);
-    //int index = 0;
-    /*for (int i = 13; i < 21; i++) {
-        headerSize |= static_cast<int>(static_cast<unsigned char>(data[i]) << index * 8);
-        index++;
-    }*/
     cout << "Size of the header: ";
     cout << headerSize;
     cout << "\n";
     if (length != headerSize) {
-        return;
+        return 1;
     }
     uint64_t num_anim = 0x0;
     //index = 0;
@@ -78,7 +80,7 @@ void processHeader(char* data, uint64_t length) {
     cout << "Number of animations: ";
     cout << num_anim;
     cout << "\n";
-    return;
+    return 0;
 }
 
 uint64_t processCreator(char* data, uint64_t index) {
@@ -89,15 +91,10 @@ uint64_t processCreator(char* data, uint64_t index) {
     index++;
     uint64_t length = 0x0;
     length = getInteger(data, index);
-    /*int num = 0;
-    for (uint64_t i = index + 1; i < index + 9; i++) {
-        length |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
-        num++;
-    }*/
     cout << "Creator length: ";
     cout << length;
     cout << "\n";
-    index += 9;
+    index += 8;
     uint64_t year = static_cast<uint64_t>(static_cast<unsigned char>(data[index]) |
         static_cast<unsigned char>(data[index + 1]) << 8);
     uint64_t month = static_cast<uint64_t>(static_cast<unsigned char>(data[index + 2]));
@@ -117,11 +114,6 @@ uint64_t processCreator(char* data, uint64_t index) {
     index += 6;
     uint64_t creatorLength = 0x0;
     creatorLength = getInteger(data, index);
-    /*int num = 0;
-    for (uint64_t i = index; i < index + 8; i++) {
-        creatorLength |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
-        num++;
-    }*/
     if (creatorLength == 0x0) {
         cout << "There is no creator name given.\n";
     }
@@ -143,46 +135,33 @@ uint64_t processCreator(char* data, uint64_t index) {
 }
 
 int processCIFFData(char* data, uint64_t index, string fileName) {
-    cout << "Magic ";
-    for (uint64_t i = index; i < index + 4; i++) {
-        cout << data[i];
+    const char* magic = "CIFF";
+    int id = 0;
+    bool same = false;
+    for (int i = index; i < index + 4; i++) {
+        if (data[i] == magic[id]) {
+            same = true;
+        }
+        else {
+            same = false;
+            return 1;
+        }
     }
-    cout << "\n";
     index += 4;
     uint64_t headerSize = 0x0;
     headerSize = getInteger(data, index);
-    /*int num = 0;
-    for (uint64_t i = index; i < index + 8; i++) {
-        headerSize |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
-        num++;
-    }*/
     cout << "Header size : " << headerSize << endl;
     index += 8;
     uint64_t contentSize = 0x0;
     contentSize = getInteger(data, index);
-    /*num = 0;
-    for (uint64_t i = index; i < index + 8; i++) {
-        contentSize |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
-        num++;
-    }*/
     cout << "Content size : " << contentSize << endl;
     index += 8;
     uint64_t width = 0x0;
     width = getInteger(data, index);
-    /*num = 0;
-    for (uint64_t i = index; i < index + 8; i++) {
-        width |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
-        num++;
-    }*/
     cout << "Width: " << width << endl;
     index += 8;
     uint64_t height = 0x0;
     height = getInteger(data, index);
-    /*num = 0;
-    for (uint64_t i = index; i < index + 8; i++) {
-        height |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
-        num++;
-    }*/
     cout << "Height: " << height << endl;
     index += 8;
     if (contentSize != width * height * 3) {
@@ -221,18 +200,6 @@ int processCIFFData(char* data, uint64_t index, string fileName) {
     for (size_t i = 0; i < webp; i++) {
         output[i] = (static_cast<unsigned char>(output[i]));
     }
-    /*FILE* file;
-    errno_t error;
-    if ((error = fopen_s(&file, "image.webp", "w")) != 0) {
-        //file = fopen_s("image.webp", "w");
-        cout << "Could not open file!" << endl;
-    }
-    else {
-        fwrite(output, 1, webp, file);
-        fclose(file);
-    }*/
-    
-    
     ofstream image(fileName + ".webp");
     if (image.is_open()) {
         for (size_t i = 0; i < webp; i++) {
@@ -256,22 +223,12 @@ int processCIFF(char* data, uint64_t index, string fileName) {
     index++;
     uint64_t length = 0x0;
     length = getInteger(data, index);
-    /*int num = 0;
-    for (uint64_t i = index + 1; i < index + 9; i++) {
-        length |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
-        num++;
-    }*/
     cout << "Animation length: ";
     cout << length;
     cout << "\n";
     index += 9;
     uint64_t anim_dur = 0x0;
     anim_dur = getInteger(data, index);
-    /*num = 0;
-    for (uint64_t i = index; i < index + 8; i++) {
-        anim_dur |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
-        num++;
-    }*/
     cout << "Duration of the animation: ";
     cout << anim_dur;
     cout << " ms\n";
@@ -288,15 +245,15 @@ string filename(string name) {
 
 int main(int argc, char* argv[])
 {
-    if (argc != 2) {
+    if (argc != 3) {
         return 1;
     }
     bool caff;
     bool same = false;
     const char* first = "-caff";
     const char* second = "-ciff";
-    for (int i = 0; argv[0][i] != '\0'; i++) {
-        if (argv[0][i] == first[i]) {
+    for (int i = 0; argv[1][i] != '\0'; i++) {
+        if (argv[1][i] == first[i]) {
             same = true;
         }
         else {
@@ -309,8 +266,8 @@ int main(int argc, char* argv[])
     }
     else {
         same = false;
-        for (int i = 0; argv[1][i] != '\0'; i++) {
-            if (argv[1][i] == second[i]) {
+        for (int i = 0; argv[2][i] != '\0'; i++) {
+            if (argv[2][i] == second[i]) {
                 same = true;
             }
             else {
@@ -325,10 +282,10 @@ int main(int argc, char* argv[])
             return 1;
         }
     }
-    if (argv[1] == NULL) {
+    if (argv[2] == NULL) {
         return 1;
     }
-    string path = argv[1];
+    string path = argv[2];
     string fileName = filename(path);
     char* data;
     loadFile(path, data);
@@ -336,7 +293,7 @@ int main(int argc, char* argv[])
     if (data != NULL) {
         if (caff) {
             uint64_t length = determineLength(data);
-            processHeader(data, length);
+            result = processHeader(data, length);
             uint64_t index = length + 9;
             uint64_t size = processCreator(data, index);
             index += size;
