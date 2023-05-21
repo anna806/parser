@@ -56,6 +56,9 @@ int processHeader(char* data, uint64_t length) {
         if (data[i] != magic[index]) {
             return 1;
         }
+        else {
+            index++;
+        }
     }
     uint64_t headerSize = 0x0;
     headerSize = getInteger(data, 13);
@@ -130,6 +133,9 @@ int processCIFFData(char* data, uint64_t index, string fileName) {
     for (uint64_t i = index; i < index + 4; i++) {
         if (data[i] != magic[id]) {
             return 1;
+        }
+        else {
+            id++;
         }
     }
     index += 4;
@@ -211,7 +217,7 @@ int processCIFF(char* data, uint64_t index, string fileName) {
     cout << "Animation length: ";
     cout << length;
     cout << "\n";
-    index += 9;
+    index += 8;
     uint64_t anim_dur = 0x0;
     anim_dur = getInteger(data, index);
     cout << "Duration of the animation: ";
