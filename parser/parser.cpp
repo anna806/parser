@@ -1,17 +1,12 @@
-// parser.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <encode.h>
-#include <decode.h>
-#include <types.h>
+#include "webp/encode.h"
+
 using namespace std;
 
 void loadFile(string path, char*& data) {
     streampos size;
-    //char* data;
     ifstream caff(path, ios::in | ios::binary | ios::ate);
     if (caff.is_open()) {
         size = caff.tellg();
@@ -25,20 +20,20 @@ void loadFile(string path, char*& data) {
     }
 }
 
+uint64_t getInteger(char* data, uint64_t index) {
+    uint64_t Integer = 0x0;
+    int num = 0;
+    for (uint64_t i = index; i < index + 8; i++) {
+        Integer |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
+        num++;
+    }
+    return Integer;
+}
+
 uint64_t determineLength(char* data) {
     uint64_t length = 0x0;
     if (data[0] == 0x1) {
-        for (int i = 1; i < 9; i++) {
-            length |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << (i - 1) * 8);
-        }
-        /*length = static_cast<uint64_t>(static_cast<unsigned char>(data[1]) |
-            static_cast<unsigned char>(data[2]) << 8 |
-            static_cast<unsigned char>(data[3]) << 16 |
-            static_cast<unsigned char>(data[4]) << 24 |
-            static_cast<unsigned char>(data[5]) << 32 |
-            static_cast<unsigned char>(data[6]) << 40 |
-            static_cast<unsigned char>(data[7]) << 48 |
-            static_cast<unsigned char>(data[8]) << 56);*/
+        length = getInteger(data, 1);
         cout << "Size of the header: ";
         cout << length;
         cout << "\n";
@@ -51,55 +46,8 @@ uint64_t determineLength(char* data) {
 
 }
 
-void processData(char* data, uint64_t length) {
-    if (length == 0) {
-        cout << "Given 0 length!\n";
-        return;
-    }
-    switch (data[0]) {
-    case 0x1: {
-
-        for (int i = 9; i < 13; i++) {
-            cout << data[i];
-        }
-        cout << "\n";
-        uint64_t headerSize = 0x0;
-        int index = 0;
-        for (int i = 13; i < 21; i++) {
-            headerSize |= static_cast<int>(static_cast<unsigned char>(data[i]) << index * 8);
-            index++;
-        }
-        cout << headerSize;
-        cout << "\n";
-        if (length != headerSize) {
-            return;
-        }
-        uint64_t num_anim = 0x0;
-        index = 0;
-        for (int i = 21; i < 29; i++) {
-            num_anim |= static_cast<int>(static_cast<unsigned char>(data[i]) << index * 8);
-            index++;
-        }
-        cout << num_anim;
-        break;
-    }
-    case 0x2: {
-
-        break;
-    }
-    case 0x3: {
-
-        break;
-    }
-    default: {
-        cout << "Not correct block type!";
-        exit(1);
-    }
-    }
-}
-
-uint64_t processHeader(char* data, uint64_t length) {
-    if (data[0] != 0x1) {
+uint64_t processHeader(char* data, uint64_t length, uint64_t index) {
+    if (data[index] != 0x1) {
         return 0x0;
     }
     cout << "Magic ";
@@ -107,12 +55,14 @@ uint64_t processHeader(char* data, uint64_t length) {
         cout << data[i];
     }
     cout << "\n";
+    //index += 
     uint64_t headerSize = 0x0;
+    headerSize = getInteger(data, 13);
     int index = 0;
-    for (int i = 13; i < 21; i++) {
+    /*for (int i = 13; i < 21; i++) {
         headerSize |= static_cast<int>(static_cast<unsigned char>(data[i]) << index * 8);
         index++;
-    }
+    }*/
     cout << "Size of the header: ";
     cout << headerSize;
     cout << "\n";
@@ -121,10 +71,11 @@ uint64_t processHeader(char* data, uint64_t length) {
     }
     uint64_t num_anim = 0x0;
     index = 0;
-    for (int i = 21; i < 29; i++) {
+    num_anim = getInteger(data, )
+    /*for (int i = 21; i < 29; i++) {
         num_anim |= static_cast<int>(static_cast<unsigned char>(data[i]) << index * 8);
         index++;
-    }
+    }*/
     cout << "Number of animations: ";
     cout << num_anim;
     cout << "\n";
@@ -189,7 +140,7 @@ uint64_t processCreator(char* data, uint64_t index) {
     return length + uint64_t(9);
 }
 
-void processCIFFData(char* data, uint64_t index) {
+void processCIFFData(char* data, uint64_t index, string fileName) {
     cout << "Magic ";
     for (uint64_t i = index; i < index + 4; i++) {
         cout << data[i];
@@ -259,12 +210,34 @@ void processCIFFData(char* data, uint64_t index) {
         pixels[num] = static_cast<uint8_t>(static_cast<unsigned char>(data[i]));
         num++;
     }
-    uint8_t** output = new uint8_t*;
-    size_t webp = WebPEncodeRGB(pixels, width, height, width * 3, 100, output);
-    WebPFree(*output);
+    uint8_t* output;
+    size_t webp = WebPEncodeRGB(pixels, width, height, width * 3, 100, &output);  
+    for (int i = 0; i < webp; i++) {
+        output[i] = (static_cast<unsigned char>(output[i]));
+    }
+    /*FILE* file;
+    errno_t error;
+    if ((error = fopen_s(&file, "image.webp", "w")) != 0) {
+        //file = fopen_s("image.webp", "w");
+        cout << "Could not open file!" << endl;
+    }
+    else {
+        fwrite(output, 1, webp, file);
+        fclose(file);
+    }*/
+    
+    
+    ofstream image(fileName + ".webp");
+    if (image.is_open()) {
+        for (int i = 0; i < webp; i++) {
+            image << output[i];
+        }
+        image.close();
+    }
+    WebPFree(output);
 }
 
-uint64_t processCIFF(char* data, uint64_t index) {
+uint64_t processCIFF(char* data, uint64_t index, string fileName) {
     if (data[index] != 0x3) {
         cout << "Animation not found!";
         return 0x0;;
@@ -289,40 +262,38 @@ uint64_t processCIFF(char* data, uint64_t index) {
     cout << anim_dur;
     cout << " ms\n";
     index += 8;
-    processCIFFData(data, index);
+    processCIFFData(data, index, fileName);
     return length + uint64_t(9);
+}
+
+string filename(string name) {
+    string file = name.substr(name.find_last_of("/\\") + 1);
+    string::size_type const p(file.find_last_of("."));
+    return file.substr(0, p);
 }
 
 int main(int argc, char* argv[])
 {
     string path = argv[0];
-    path = "C:\\Users\\ticka\\Documents\\BME\\Szoftverbiztonsag\\caff_files\\1.caff";
+    path = "C:\\Users\\ticka\\Documents\\BME\\Szoftverbiztonsag\\caff_files\\3.caff";
+    string fileName = filename(path);
+    bool caff = true;
     char* data;
     loadFile(path, data);
     if (data != NULL) {
-        uint64_t length = determineLength(data);
-        uint64_t num_anim = processHeader(data, length);
-        uint64_t index = length + 9;
-        uint64_t size = processCreator(data, index);
-        index += size;
-        for (int i = 0; i < num_anim; i++) {
-            size = processCIFF(data, index);
+        if (caff) {
+            uint64_t length = determineLength(data);
+            uint64_t num_anim = processHeader(data, length);
+            uint64_t index = length + 9;
+            uint64_t size = processCreator(data, index);
             index += size;
+            size = processCIFF(data, index, fileName);
+            index += size;
+        }
+        else {
+            processCIFFData(data, 0, fileName);
         }
     }
     delete[] data;
     return 0;
 }
-
-
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
