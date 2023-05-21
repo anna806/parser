@@ -52,13 +52,8 @@ int processHeader(char* data, uint64_t length) {
     }
     const char* magic = "CAFF";
     int index = 0;
-    bool same = false;
     for (int i = 9; i < 13; i++) {
-        if (data[i] == magic[index]) {
-            same = true;
-        }
-        else {
-            same = false;
+        if (data[i] != magic[index]) {
             return 1;
         }
     }
@@ -71,12 +66,7 @@ int processHeader(char* data, uint64_t length) {
         return 1;
     }
     uint64_t num_anim = 0x0;
-    //index = 0;
     num_anim = getInteger(data, 21);
-    /*for (int i = 21; i < 29; i++) {
-        num_anim |= static_cast<int>(static_cast<unsigned char>(data[i]) << index * 8);
-        index++;
-    }*/
     cout << "Number of animations: ";
     cout << num_anim;
     cout << "\n";
@@ -137,13 +127,8 @@ uint64_t processCreator(char* data, uint64_t index) {
 int processCIFFData(char* data, uint64_t index, string fileName) {
     const char* magic = "CIFF";
     int id = 0;
-    bool same = false;
-    for (int i = index; i < index + 4; i++) {
-        if (data[i] == magic[id]) {
-            same = true;
-        }
-        else {
-            same = false;
+    for (uint64_t i = index; i < index + 4; i++) {
+        if (data[i] != magic[id]) {
             return 1;
         }
     }
