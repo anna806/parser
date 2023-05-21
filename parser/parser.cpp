@@ -71,11 +71,11 @@ uint64_t processHeader(char* data, uint64_t length) {
     }
     uint64_t num_anim = 0x0;
     index = 0;
-    //num_anim = getInteger(data, )
-    for (int i = 21; i < 29; i++) {
+    num_anim = getInteger(data, 21);
+    /*for (int i = 21; i < 29; i++) {
         num_anim |= static_cast<int>(static_cast<unsigned char>(data[i]) << index * 8);
         index++;
-    }
+    }*/
     cout << "Number of animations: ";
     cout << num_anim;
     cout << "\n";
@@ -87,12 +87,14 @@ uint64_t processCreator(char* data, uint64_t index) {
         cout << "Creator not found!";
         return 0x0;
     }
+    index++;
     uint64_t length = 0x0;
-    int num = 0;
+    length = getInteger(data, index);
+    /*int num = 0;
     for (uint64_t i = index + 1; i < index + 9; i++) {
         length |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
         num++;
-    }
+    }*/
     cout << "Creator length: ";
     cout << length;
     cout << "\n";
@@ -115,11 +117,12 @@ uint64_t processCreator(char* data, uint64_t index) {
     cout << "\n";
     index += 6;
     uint64_t creatorLength = 0x0;
-    num = 0;
+    creatorLength = getInteger(data, index);
+    /*int num = 0;
     for (uint64_t i = index; i < index + 8; i++) {
         creatorLength |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
         num++;
-    }
+    }*/
     if (creatorLength == 0x0) {
         cout << "There is no creator name given.\n";
     }
@@ -148,42 +151,46 @@ void processCIFFData(char* data, uint64_t index, string fileName) {
     cout << "\n";
     index += 4;
     uint64_t headerSize = 0x0;
-    int num = 0;
+    headerSize = getInteger(data, index);
+    /*int num = 0;
     for (uint64_t i = index; i < index + 8; i++) {
         headerSize |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
         num++;
-    }
+    }*/
     cout << "Header size : " << headerSize << endl;
     index += 8;
     uint64_t contentSize = 0x0;
-    num = 0;
+    contentSize = getInteger(data, index);
+    /*num = 0;
     for (uint64_t i = index; i < index + 8; i++) {
         contentSize |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
         num++;
-    }
+    }*/
     cout << "Content size : " << contentSize << endl;
     index += 8;
     uint64_t width = 0x0;
-    num = 0;
+    width = getInteger(data, index);
+    /*num = 0;
     for (uint64_t i = index; i < index + 8; i++) {
         width |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
         num++;
-    }
+    }*/
     cout << "Width: " << width << endl;
     index += 8;
     uint64_t height = 0x0;
-    num = 0;
+    height = getInteger(data, index);
+    /*num = 0;
     for (uint64_t i = index; i < index + 8; i++) {
         height |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
         num++;
-    }
+    }*/
     cout << "Height: " << height << endl;
     index += 8;
     if (contentSize != width * height * 3) {
         cout << "Content condition not met!" << endl;
         return;
     }
-    num = 0;
+    int num = 0;
     for (uint64_t i = index; data[i] != '\n'; i++) {
         cout << data[i];
         num++;
@@ -242,22 +249,25 @@ uint64_t processCIFF(char* data, uint64_t index, string fileName) {
         cout << "Animation not found!";
         return 0x0;;
     }
+    index++;
     uint64_t length = 0x0;
-    int num = 0;
+    length = getInteger(data, index);
+    /*int num = 0;
     for (uint64_t i = index + 1; i < index + 9; i++) {
         length |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
         num++;
-    }
+    }*/
     cout << "Animation length: ";
     cout << length;
     cout << "\n";
     index += 9;
     uint64_t anim_dur = 0x0;
-    num = 0;
+    anim_dur = getInteger(data, index);
+    /*num = 0;
     for (uint64_t i = index; i < index + 8; i++) {
         anim_dur |= static_cast<uint64_t>(static_cast<unsigned char>(data[i]) << num * 8);
         num++;
-    }
+    }*/
     cout << "Duration of the animation: ";
     cout << anim_dur;
     cout << " ms\n";
@@ -274,10 +284,22 @@ string filename(string name) {
 
 int main(int argc, char* argv[])
 {
-    string path = argv[0];
-    path = "C:\\Users\\ticka\\Documents\\BME\\Szoftverbiztonsag\\caff_files\\3.caff";
-    string fileName = filename(path);
     bool caff = true;
+    /*if (argv[0] == "-caff") {
+        caff = true;
+    }
+    else if (argv[0] == "-ciff") {
+        caff = false;
+    }
+    else {
+        return 1;
+    }
+    if (argv[1] == NULL) {
+        return 1;
+    }
+    string path = argv[1];*/
+    string path = "C:\\Users\\ticka\\Documents\\BME\\Szoftverbiztonsag\\caff_files\\3.caff";
+    string fileName = filename(path);
     char* data;
     loadFile(path, data);
     if (data != NULL) {
@@ -289,6 +311,7 @@ int main(int argc, char* argv[])
             index += size;
             size = processCIFF(data, index, fileName);
             index += size;
+
         }
         else {
             processCIFFData(data, 0, fileName);
