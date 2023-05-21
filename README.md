@@ -1,3 +1,3 @@
 # parser
 
-A parser program futtatásához szügség van a libwebp csomag telepítésére.
+A parser program futtatásához szükség van a libwebp csomag telepítésére.
