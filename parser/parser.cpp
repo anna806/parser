@@ -40,22 +40,21 @@ uint64_t determineLength(char* data) {
     }
     else {
         cout << "Header not found!\n";
-        exit(1);
+        std::exit(1);
     }
     return length;
 
 }
 
-uint64_t processHeader(char* data, uint64_t length) {
+void processHeader(char* data, uint64_t length) {
     if (data[0] != 0x1) {
-        return 0x0;
+        return;
     }
     cout << "Magic ";
     for (int i = 9; i < 13; i++) {
         cout << data[i];
     }
     cout << "\n";
-    //index += 
     uint64_t headerSize = 0x0;
     headerSize = getInteger(data, 13);
     int index = 0;
@@ -67,7 +66,7 @@ uint64_t processHeader(char* data, uint64_t length) {
     cout << headerSize;
     cout << "\n";
     if (length != headerSize) {
-        return 0x0;
+        return;
     }
     uint64_t num_anim = 0x0;
     index = 0;
@@ -79,7 +78,7 @@ uint64_t processHeader(char* data, uint64_t length) {
     cout << "Number of animations: ";
     cout << num_anim;
     cout << "\n";
-    return num_anim;
+    return;
 }
 
 uint64_t processCreator(char* data, uint64_t index) {
@@ -219,7 +218,7 @@ void processCIFFData(char* data, uint64_t index, string fileName) {
     }
     uint8_t* output;
     size_t webp = WebPEncodeRGB(pixels, width, height, width * 3, 100, &output);  
-    for (int i = 0; i < webp; i++) {
+    for (size_t i = 0; i < webp; i++) {
         output[i] = (static_cast<unsigned char>(output[i]));
     }
     /*FILE* file;
@@ -236,7 +235,7 @@ void processCIFFData(char* data, uint64_t index, string fileName) {
     
     ofstream image(fileName + ".webp");
     if (image.is_open()) {
-        for (int i = 0; i < webp; i++) {
+        for (size_t i = 0; i < webp; i++) {
             image << output[i];
         }
         image.close();
@@ -284,8 +283,8 @@ string filename(string name) {
 
 int main(int argc, char* argv[])
 {
-    bool caff = true;
-    /*if (argv[0] == "-caff") {
+    bool caff;
+    if (argv[0] == "-caff") {
         caff = true;
     }
     else if (argv[0] == "-ciff") {
@@ -297,15 +296,14 @@ int main(int argc, char* argv[])
     if (argv[1] == NULL) {
         return 1;
     }
-    string path = argv[1];*/
-    string path = "C:\\Users\\ticka\\Documents\\BME\\Szoftverbiztonsag\\caff_files\\3.caff";
+    string path = argv[1];
     string fileName = filename(path);
     char* data;
     loadFile(path, data);
     if (data != NULL) {
         if (caff) {
             uint64_t length = determineLength(data);
-            uint64_t num_anim = processHeader(data, length);
+            processHeader(data, length);
             uint64_t index = length + 9;
             uint64_t size = processCreator(data, index);
             index += size;
