@@ -46,8 +46,8 @@ uint64_t determineLength(char* data) {
 
 }
 
-uint64_t processHeader(char* data, uint64_t length, uint64_t index) {
-    if (data[index] != 0x1) {
+uint64_t processHeader(char* data, uint64_t length) {
+    if (data[0] != 0x1) {
         return 0x0;
     }
     cout << "Magic ";
@@ -71,11 +71,11 @@ uint64_t processHeader(char* data, uint64_t length, uint64_t index) {
     }
     uint64_t num_anim = 0x0;
     index = 0;
-    num_anim = getInteger(data, )
-    /*for (int i = 21; i < 29; i++) {
+    //num_anim = getInteger(data, )
+    for (int i = 21; i < 29; i++) {
         num_anim |= static_cast<int>(static_cast<unsigned char>(data[i]) << index * 8);
         index++;
-    }*/
+    }
     cout << "Number of animations: ";
     cout << num_anim;
     cout << "\n";
