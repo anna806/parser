@@ -187,7 +187,7 @@ int processCIFFData(char* data, uint64_t index, string fileName) {
     index += 8;
     if (contentSize != width * height * 3) {
         cout << "Content condition not met!" << endl;
-        return;
+        return 1;
     }
     int num = 0;
     for (uint64_t i = index; data[i] != '\n'; i++) {
@@ -344,7 +344,7 @@ int main(int argc, char* argv[])
 
         }
         else {
-            int result = processCIFFData(data, 0, fileName);
+            result = processCIFFData(data, 0, fileName);
         }
     }
     delete[] data;
